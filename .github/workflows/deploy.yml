@@ -1,0 +1,31 @@
+name: Vercel Deployment
+
+on:
+  # Löst den Workflow aus, wenn in den Branch 'main' gepusht wird
+  push:
+    branches:
+      - main
+  # Löst den Workflow bei Pull Requests aus (für Preview Deployments)
+  pull_request:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Code auschecken
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. Vercel Deployment Action verwenden
+      # Diese Action vereinfacht die Nutzung der Vercel CLI
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          # Vercel Token aus den GitHub Secrets
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          # ID des Vercel-Projekts (optional, aber empfohlen)
+          # vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          # ID der Vercel-Organisation/des Teams (optional)
+          # vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          # Der Ordner, den Sie deployen möchten (oft der Root-Ordner)
+          github-token: ${{ secrets.GITHUB_TOKEN }} # Für Pull Request Kommentare
