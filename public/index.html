@@ -14,11 +14,11 @@
     <div id="login-screen" class="modal-overlay active">
         <div class="login-card">
             <div class="login-icon">
-                <!-- Einfaches Icon als Platzhalter -->
+                <!-- Icon im Stil des Panels (grüner Akzent) -->
                 <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" fill="#4CAF50"/>
-                    <path d="M12 5L12 19" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M8 9L12 5L16 9" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" fill="var(--accent-color)"/>
+                    <path d="M12 5L12 19" stroke="var(--accent-color)" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M8 9L12 5L16 9" stroke="var(--accent-color)" stroke-width="2" stroke-linecap="round"/>
                 </svg>
             </div>
             <h2>Admin-Login</h2>
@@ -58,17 +58,18 @@
             <div id="dashboard" class="page active">
                 <h2>Dashboard Übersicht</h2>
                 <div class="dashboard-grid">
+                    <!-- Diese Stat-Karten entsprechen dem Layout aus dem Video und den Screenshots -->
                     <div class="stat-card">
                         <h3>Online Spieler</h3>
-                        <p class="stat-value" id="stat-online-players">0</p>
+                        <p class="stat-value" id="stat-online-players">42</p>
                     </div>
                     <div class="stat-card">
                         <h3>Aktive Bans</h3>
-                        <p class="stat-value" id="stat-active-bans">0</p>
+                        <p class="stat-value" id="stat-active-bans">5</p>
                     </div>
                     <div class="stat-card">
                         <h3>Offene Reports</h3>
-                        <p class="stat-value" id="stat-reports">0</p>
+                        <p class="stat-value" id="stat-reports">12</p>
                     </div>
                     <div class="stat-card accent">
                         <h3>Nächster Event</h3>
@@ -77,14 +78,16 @@
                 </div>
             </div>
 
-            <!-- === 2. ADMIN AKTIONEN SEITE === -->
+            <!-- === 2. ADMIN AKTIONEN SEITE (Wie im Video) === -->
             <div id="user-management" class="page">
                 <h2>Admin-Aktionen</h2>
                 <div class="search-bar-top">
+                    <!-- Suchfeld für den Spieler (wie im Video) -->
                     <input type="text" id="player-search-top" placeholder="Spieler suchen (Name oder ID...)">
                 </div>
                 <h3>Admin-Aktionen</h3>
                 <div class="actions-grid">
+                    <!-- Kacheln wie im Video, gestylt mit den aktuellen Farben -->
                     <div class="action-tile yellow" data-action="Mündliche Verwarnung">
                         <span class="icon">💬</span> 
                         <h4>Mündliche Verwarnung</h4>

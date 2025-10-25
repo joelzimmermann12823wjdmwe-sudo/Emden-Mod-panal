@@ -1,11 +1,11 @@
 /* --- BASIS VARIABLEN (DARK THEME - Das aktuelle Design) --- */
 :root {
-    --bg-color: #1a1a1a;        /* Dunkelgrau Hintergrund */
-    --card-color: #252526;      /* Dunklere Boxen */
+    --bg-color: #1a1a1a;        /* Dunkelgrau Hintergrund (Aus Screenshot) */
+    --card-color: #252526;      /* Dunklere Boxen (Aus Screenshot) */
     --text-color: #f1f1f1;      /* Heller Text */
-    --accent-color: #4CAF50;    /* GRÜNE Akzentfarbe (Ihr aktuelles Design) */
+    --accent-color: #4CAF50;    /* GRÜNE Akzentfarbe (Aus Screenshot) */
     --danger-color: #f44336;    /* Rot für Bans/Logout */
-    --primary-btn-color: #007bff; /* Blau für primäre Aktionen (wird nur in Light-Theme verwendet) */
+    --primary-btn-color: #007bff; /* Blau für Light Theme */
     --transition-speed: 0.3s;
 }
 
@@ -130,7 +130,7 @@ h3 {
 }
 
 
-/* --- DASHBOARD STYLES --- */
+/* --- DASHBOARD STYLES (wie im Screenshot) --- */
 .dashboard-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -143,10 +143,10 @@ h3 {
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
-    border-left: 5px solid #555;
+    border-left: 5px solid var(--accent-color); /* Alle Stat-Cards haben den grünen Akzent */
     transition: background-color var(--transition-speed), border-left-color var(--transition-speed);
 }
-
+/* Die Klasse .accent wird beibehalten, aber aktuell hat es denselben Effekt wie die Standard-Card */
 .stat-card.accent {
     border-left-color: var(--accent-color);
 }
@@ -161,6 +161,13 @@ h3 {
     font-size: 2.5em;
     font-weight: bold;
     margin: 0;
+    color: var(--text-color); 
+}
+
+/* Anpassung der Akzent-Werte (wie in den Screenshots) */
+.stat-card:nth-child(2) .stat-value, /* Aktive Bans ist grün, um es hervorzuheben */
+.stat-card.accent .stat-value { /* Nächster Event */
+    color: var(--accent-color);
 }
 
 
@@ -201,6 +208,7 @@ h3 {
 }
 
 .action-tile.active {
+    /* WICHTIG: Auswahlrahmen MUSS die aktuelle Akzentfarbe (Grün) verwenden */
     border: 2px solid var(--accent-color);
     box-shadow: 0 0 15px rgba(76, 175, 80, 0.5); /* Grüner Schein für Auswahl */
 }
@@ -222,10 +230,10 @@ h3 {
     margin-bottom: 10px;
 }
 
-/* Farben für die Kacheln */
-.action-tile.yellow { border-top-color: #ffc107; } 
-.action-tile.red { border-top-color: var(--danger-color); } 
-.action-tile.green { border-top-color: var(--accent-color); }
+/* Farben für die Kacheln (Hier werden die Akzentfarben für die Kacheln definiert) */
+.action-tile.yellow { border-top-color: #ffc107; } /* Standard Gelb für Verwarnungen */
+.action-tile.red { border-top-color: var(--danger-color); } /* Standard Rot für Bans/Kicks */
+.action-tile.green { border-top-color: var(--accent-color); } /* Aktuelle Akzentfarbe (Grün) für Entbannen */
 
 /* --- Befehl Ausführen (Execute Box) --- */
 .execute-box {
@@ -256,6 +264,7 @@ h3 {
 
 #execute-action-btn {
     width: 100%;
+    /* Button Farbe MUSS die aktuelle Akzentfarbe (Grün) verwenden */
     background-color: var(--accent-color);
     color: white;
     border: none;
