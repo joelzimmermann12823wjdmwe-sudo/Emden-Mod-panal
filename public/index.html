@@ -6,81 +6,152 @@
     <title>Nordstadt-RP Mod Panel</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
-
-    <header class="top-bar">
-        <div class="panel-title">Nordstadt-RP Mod Panel</div>
-        <nav class="main-nav">
-            <a href="#dashboard" class="nav-item active" data-page="dashboard">Dashboard</a>
-            <a href="#user-management" class="nav-item" data-page="user-management">User Management</a>
-            <a href="#logs" class="nav-item" data-page="logs">Logs & Reporting</a>
-            <a href="#settings" class="nav-item" data-page="settings">Settings</a>
-        </nav>
-        <div class="user-info">
-            Eingeloggt als: <span class="admin-name">Admin Hans</span> 
-            <button class="logout-btn">Logout</button>
-        </div>
-    </header>
-
-    <main class="content-area">
-        
-        <div id="dashboard" class="page active">
-            <h2>Dashboard Übersicht</h2>
+<body class="dark-theme"> <div id="login-screen" class="modal-overlay active">
+        <div class="login-card">
+            <div class="login-icon">
+                <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" fill="#4CAF50"/>
+                    <path d="M12 5L12 19" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M8 9L12 5L16 9" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <h2>Admin-Login</h2>
+            <p>Bitte gib deinen Admin-Namen ein, um fortzufahren.</p>
             
-            <div class="dashboard-grid">
-                <div class="stat-card">
-                    <h3>Online Spieler</h3>
-                    <p class="stat-value" id="stat-online-players">0</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Aktive Bans</h3>
-                    <p class="stat-value" id="stat-active-bans">0</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Offene Reports</h3>
-                    <p class="stat-value" id="stat-reports">0</p>
-                </div>
-                <div class="stat-card accent">
-                    <h3>Nächster Event</h3>
-                    <p class="stat-value" id="stat-event">Heute 20:00</p>
+            <input type="text" id="admin-name-input" placeholder="Dein Admin-Name (z.B. Joel.Z)" value="Admin Hans">
+            
+            <button id="login-button" class="primary-btn">
+                <span class="icon">☰</span> Zugang gewähren
+            </button>
+        </div>
+    </div>
+
+
+    <div id="main-panel" style="display: none;">
+
+        <header class="top-bar">
+            <div class="panel-title">Nordstadt-RP Mod Panel</div>
+            <nav class="main-nav">
+                <a href="#dashboard" class="nav-item active" data-page="dashboard">Dashboard</a>
+                <a href="#user-management" class="nav-item" data-page="user-management">Admin-Aktionen</a>
+                <a href="#logs" class="nav-item" data-page="logs">Logs & Reporting</a>
+            </nav>
+            <div class="user-info">
+                Eingeloggt als: <span id="display-admin-name" class="admin-name"></span> 
+                <button id="open-settings-btn" class="icon-btn">⚙️</button> 
+                <button class="logout-btn" id="logout-button">Logout</button>
+            </div>
+        </header>
+
+        <main class="content-area">
+            
+            <div id="dashboard" class="page active">
+                <h2>Dashboard Übersicht</h2>
+                <div class="dashboard-grid">
+                    <div class="stat-card">
+                        <h3>Online Spieler</h3>
+                        <p class="stat-value" id="stat-online-players">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Aktive Bans</h3>
+                        <p class="stat-value" id="stat-active-bans">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Offene Reports</h3>
+                        <p class="stat-value" id="stat-reports">0</p>
+                    </div>
+                    <div class="stat-card accent">
+                        <h3>Nächster Event</h3>
+                        <p class="stat-value" id="stat-event">Heute 20:00</p>
+                    </div>
                 </div>
             </div>
-            
+
+            <div id="user-management" class="page">
+                <h2>Admin-Aktionen</h2>
+                <div class="search-bar-top">
+                    <input type="text" id="player-search-top" placeholder="Spieler suchen (Name oder ID...)">
+                </div>
+                <h3>Admin-Aktionen</h3>
+                <div class="actions-grid">
+                    <div class="action-tile yellow" data-action="Mündliche Verwarnung">
+                        <span class="icon">💬</span> 
+                        <h4>Mündliche Verwarnung</h4>
+                        <p>Zur Dokumentation, keine Spiel-Konsequenz.</p>
+                    </div>
+                    <div class="action-tile yellow" data-action="Schriftliche Verwarnung">
+                        <span class="icon">⚠️</span> 
+                        <h4>Schriftliche Verwarnung</h4>
+                        <p>Offizieller Warn-Eintrag.</p>
+                    </div>
+                    <div class="action-tile red" data-action="Spieler Kicken">
+                        <span class="icon">❌</span> 
+                        <h4>Spieler Kicken</h4>
+                        <p>Sofortiger Server-Ausschluss.</p>
+                    </div>
+                    <div class="action-tile red" data-action="1-Tages Ban">
+                        <span class="icon">🔴</span> 
+                        <h4>1-Tages Ban</h4>
+                        <p>Temporärer Server-Bann.</p>
+                    </div>
+                    <div class="action-tile red" data-action="Permanent Ban">
+                        <span class="icon">💀</span> 
+                        <h4>Permanent Ban</h4>
+                        <p>Endgültiger Server-Ausschluss.</p>
+                    </div>
+                    <div class="action-tile green" data-action="Entbannen">
+                        <span class="icon">✅</span> 
+                        <h4>Entbannen</h4>
+                        <p>Aufhebung eines bestehenden Server-Banns.</p>
+                    </div>
+                </div>
+                <h3>Befehl ausführen</h3>
+                <div class="execute-box">
+                    <label for="target-player">Ziel-Spielername / UserID</label>
+                    <input type="text" id="target-player" placeholder="Spielername oder ID eingeben">
+                    <label for="action-reason">Grund für die Aktion (Optional)</label>
+                    <input type="text" id="action-reason" placeholder="Z.B. Regelbruch Paragraf 3">
+                    <button id="execute-action-btn">
+                        Aktion senden (Ausgewählt: <span id="selected-action">Mündliche Verwarnung</span>)
+                    </button>
+                </div>
+                <h3 style="margin-top: 40px;">Gesamte Eintrags-Historie</h3>
+                <div class="log-box">
+                    <p style="text-align: center; color: #aaa;">Fehler beim Laden der Gesamthistorie.</p>
+                </div>
             </div>
 
-        <div id="user-management" class="page">
-            <h2>User Management</h2>
-            <div class="controls">
-                <input type="text" id="user-search" placeholder="Spieler ID / Name suchen...">
-                <button class="action-btn primary-btn">Neuen Ban hinzufügen</button>
+            <div id="logs" class="page">
+                <h2>Logs & Reporting</h2>
+                <p>Hier erscheinen detaillierte Admin- und Server-Logs. Diese Funktionalität ist aktuell nur ein Platzhalter.</p>
             </div>
             
-            <table class="user-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Rank</th>
-                        <th>Status</th>
-                        <th>Aktionen</th>
-                    </tr>
-                </thead>
-                <tbody id="user-table-body">
-                    </tbody>
-            </table>
-        </div>
+            <div id="settings" class="page" style="display:none;"></div> 
 
-        <div id="logs" class="page">
-            <h2>Logs & Reporting</h2>
-            <p>Hier erscheinen detaillierte Admin- und Server-Logs. Diese Funktionalität ist aktuell nur ein Platzhalter.</p>
-        </div>
+        </main>
+    </div>
 
-        <div id="settings" class="page">
-            <h2>Settings</h2>
-            <p>Globale Mod-Panel-Einstellungen. Diese Funktionalität ist aktuell nur ein Platzhalter.</p>
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="close-btn" id="close-settings-btn">X</button>
+            <h2>Einstellungen</h2>
+            
+            <div class="setting-group">
+                <h4>Design auswählen</h4>
+                <div class="radio-group">
+                    <label>
+                        <input type="radio" name="theme" value="dark" checked>
+                        Dunkles Design
+                    </label>
+                    <label>
+                        <input type="radio" name="theme" value="light">
+                        Helles Design
+                    </label>
+                </div>
+                <p class="hint">Das Panel speichert dein gewähltes Design lokal im Browser.</p>
+            </div>
         </div>
-
-    </main>
+    </div>
 
     <script src="js/script.js"></script>
 </body>
