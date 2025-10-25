@@ -1,7 +1,7 @@
 // Firebase Imports (MUST use the global variables __app_id, __firebase_config, __initial_auth_token)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, doc, setDoc, onSnapshot, collection, query, limit, where, getDocs, addDoc, serverTimestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, limit, addDoc, serverTimestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // --- Global State and Firebase Setup ---
 let app;
@@ -10,16 +10,78 @@ let auth;
 let userId = 'anon_user'; // Default placeholder, updated on auth state change
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 let adminName = ''; // Stores the logged-in admin's name
-let selectedAction = ''; // Stores the currently selected action (e.g., 'ban', 'warn')
-let selectedAccent = ''; // Stores the accent color for the selected action
+let selectedAction = 'ban'; // Stores the currently selected action (e.g., 'ban', 'warn')
+let selectedAccent = 'red'; // Stores the accent color for the selected action
 let theme = 'dark'; // Default theme
 
 // Firebase config retrieval and initialization
 const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
 
+// ===============================================
+// 1. FIREBASE & SETTINGS PERSISTENCE
+// ===============================================
+
 // Helper function to get the Firestore collection path for public data
 function getPublicCollectionPath(collectionName) {
     return `/artifacts/${appId}/public/data/${collectionName}`;
+}
+
+// Helper function to get the Firestore document path for private user settings
+function getPrivateSettingsDocRef() {
+    return doc(db, 
+        `artifacts/${appId}/users/${userId}/settings`, 
+        'user_settings'
+    );
+}
+
+/**
+ * Speichert den Admin-Namen und das Theme in Firestore (Private Settings).
+ */
+async function saveAdminSettings() {
+    if (!db || !userId || userId === 'anon_user') return;
+    try {
+        await setDoc(getPrivateSettingsDocRef(), { 
+            adminName: adminName,
+            theme: theme,
+        }, { merge: true });
+        console.log("Admin settings saved to Firestore.");
+    } catch (e) {
+        console.error("Error saving admin settings:", e);
+    }
+}
+
+/**
+ * Lädt Admin-Einstellungen (Name und Theme) aus Firestore.
+ */
+async function loadAdminSettings() {
+    if (!db || !userId) return;
+    try {
+        const docSnap = await getDoc(getPrivateSettingsDocRef());
+
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            adminName = data.adminName || '';
+            theme = data.theme || 'dark';
+        } else {
+            // Document does not exist, use local defaults
+            adminName = '';
+            theme = 'dark';
+        }
+        
+        // Apply loaded settings to UI immediately without saving again
+        applyTheme(theme, false); 
+        updateAdminInfo(adminName, false); 
+
+        // Decide whether to show login modal
+        if (!adminName) {
+            showLoginModal();
+        } else {
+            hideLoginModal();
+        }
+
+    } catch (e) {
+        console.error("Error loading admin settings:", e);
+    }
 }
 
 // Helper function to initialize Firebase and sign in
@@ -32,8 +94,9 @@ async function initializeFirebase() {
         console.log("Firebase initialized.");
 
         // Authenticate using the custom token or anonymously if not available
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            await signInWithCustomToken(auth, __initial_auth_token);
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        if (initialAuthToken) {
+            await signInWithCustomToken(auth, initialAuthToken);
             console.log("Signed in with custom token.");
         } else {
             await signInAnonymously(auth);
@@ -45,13 +108,14 @@ async function initializeFirebase() {
             if (user) {
                 userId = user.uid;
                 console.log("User ID set:", userId);
-                // After successful sign-in, try to load data
                 loadInitialData();
             } else {
-                // Should not happen with the initial token unless sign-out is explicit
+                // User signed out or not authenticated (e.g., after explicit sign-out)
                 userId = crypto.randomUUID(); // Fallback to random ID for truly anonymous access
-                console.log("Anonymous sign-in fallback. Generated random userId:", userId);
-                loadInitialData();
+                adminName = ''; // Clear admin name on sign out
+                updateAdminInfo(adminName, false); 
+                showLoginModal();
+                console.log("Signed out or anonymous fallback. Using new temporary userId:", userId);
             }
         });
 
@@ -61,34 +125,16 @@ async function initializeFirebase() {
     }
 }
 
-// --- Local Storage Functions (for non-database settings) ---
-
-function saveSettings() {
-    localStorage.setItem('modPanelTheme', theme);
-    localStorage.setItem('modPanelAdminName', adminName);
+async function loadInitialData() {
+    // This is called after successful sign-in
+    await loadAdminSettings(); // Load persisted settings first
+    startRealTimeListeners(); // Start listeners after userId is confirmed
+    showPage('dashboard');
 }
 
-function loadSettings() {
-    theme = localStorage.getItem('modPanelTheme') || 'dark';
-    adminName = localStorage.getItem('modPanelAdminName') || '';
-
-    // Apply theme immediately
-    document.body.className = theme === 'light' ? 'light-theme' : '';
-    
-    // Check if adminName exists. If not, show login modal.
-    if (!adminName) {
-        showLoginModal();
-    } else {
-        updateAdminInfo(adminName);
-        hideLoginModal();
-    }
-    
-    // Set theme radio button in settings modal
-    const themeRadio = document.getElementById(theme + '-theme-radio');
-    if (themeRadio) themeRadio.checked = true;
-}
-
-// --- UI / Theme Functions ---
+// ===============================================
+// 2. UI / THEME FUNCTIONS
+// ===============================================
 
 function showPage(pageId) {
     document.querySelectorAll('.page').forEach(page => {
@@ -122,21 +168,38 @@ function hideSettingsModal() {
     document.getElementById('settings-modal').classList.remove('active');
 }
 
-function applyTheme(newTheme) {
+/**
+ * Wendet das Theme an und speichert es optional in Firestore.
+ * @param {string} newTheme - 'dark' or 'light'
+ * @param {boolean} shouldSave - Whether to persist the setting to Firestore. Default is true.
+ */
+function applyTheme(newTheme, shouldSave = true) {
     theme = newTheme;
     document.body.className = theme === 'light' ? 'light-theme' : '';
-    saveSettings();
+    
+    if (shouldSave) saveAdminSettings();
 }
 
-function updateAdminInfo(name) {
+/**
+ * Aktualisiert den Admin-Namen in State und UI und speichert ihn optional.
+ * @param {string} name 
+ * @param {boolean} shouldSave - Whether to persist the setting to Firestore. Default is true.
+ */
+function updateAdminInfo(name, shouldSave = true) {
     adminName = name;
-    document.getElementById('admin-name-display').textContent = name;
+    document.getElementById('admin-name-display').textContent = name || 'Gast';
     document.getElementById('admin-id-display').textContent = userId;
-    saveSettings();
+    
+    if (shouldSave) saveAdminSettings();
 }
 
-// --- Data Logging & Display ---
+// ===============================================
+// 3. DATA LOGGING & REAL-TIME LISTENERS
+// ===============================================
 
+/**
+ * Schreibt einen Log-Eintrag in die öffentliche Firestore-Log-Collection.
+ */
 async function logAction(admin, action, type = 'info', targetUser = 'N/A') {
     if (!db) return;
 
@@ -151,13 +214,17 @@ async function logAction(admin, action, type = 'info', targetUser = 'N/A') {
 
     try {
         const logCollectionPath = getPublicCollectionPath('moderation_logs');
-        await addDoc(collection(db, logCollectionPath), logEntry);
+        // Verwenden Sie addDoc, da der Document ID irrelevant ist
+        await addDoc(collection(db, logCollectionPath), logEntry); 
         console.log("Action logged successfully:", logEntry);
     } catch (error) {
         console.error("Error logging action to Firestore:", error);
     }
 }
 
+/**
+ * Rendert einen Log-Eintrag in der Liste.
+ */
 function displayLog(entry) {
     const logList = document.getElementById('log-list');
     if (!logList) return;
@@ -176,20 +243,12 @@ function displayLog(entry) {
     `;
 
     // Insert at the top
-    if (logList.firstChild) {
-        logList.insertBefore(li, logList.firstChild);
-    } else {
-        logList.appendChild(li);
-    }
-    
-    // Keep log concise (e.g., max 50 entries)
-    while (logList.children.length > 50) {
-        logList.removeChild(logList.lastChild);
-    }
+    logList.insertBefore(li, logList.firstChild);
 }
 
-// --- Real-time Data Listeners ---
-
+/**
+ * Startet alle Firestore Echtzeit-Listener (onSnapshot).
+ */
 function startRealTimeListeners() {
     if (!db) return;
 
@@ -197,30 +256,27 @@ function startRealTimeListeners() {
     const logCollectionPath = getPublicCollectionPath('moderation_logs');
     const logsQuery = query(
         collection(db, logCollectionPath),
-        // Sort by timestamp descending
-        // NOTE: Firebase queries require an index if using orderBy. We sort client-side instead.
-        // orderBy('timestamp', 'desc'), 
-        limit(50)
+        // orderBy is commented out as it requires an index. We sort client-side.
+        limit(50) 
     );
 
     onSnapshot(logsQuery, (snapshot) => {
         const logList = document.getElementById('log-list');
         if (!logList) return;
         
-        // Fetch all documents and sort them client-side by timestamp
         const logs = [];
         snapshot.docs.forEach(doc => {
             logs.push({ id: doc.id, ...doc.data() });
         });
 
-        // Sort by timestamp descending (newest first)
+        // Sort by timestamp descending (newest first) client-side
         logs.sort((a, b) => {
             const timeA = a.timestamp && a.timestamp.toDate ? a.timestamp.toDate().getTime() : 0;
             const timeB = b.timestamp && b.timestamp.toDate ? b.timestamp.toDate().getTime() : 0;
             return timeB - timeA;
         });
 
-        // Clear existing log and display sorted logs
+        // Clear existing log and display sorted logs (ensures no duplicates)
         logList.innerHTML = '';
         logs.forEach(displayLog);
 
@@ -241,7 +297,7 @@ function startRealTimeListeners() {
             document.getElementById('next-event-value').textContent = stats.nextEvent || 'N/A';
         } else {
             console.log("User stats document not found. Setting defaults.");
-            // Optionally initialize the document if it doesn't exist
+            // Initialize the document if it doesn't exist
             setDoc(userStatsRef, { totalUsers: 1000, activeBans: 5, dailyReports: 42, nextEvent: 'Community Tag' }, { merge: true })
                 .catch(e => console.error("Error setting default stats:", e));
         }
@@ -251,15 +307,9 @@ function startRealTimeListeners() {
     });
 }
 
-async function loadInitialData() {
-    // This is called after successful sign-in
-    startRealTimeListeners();
-    // Re-check for admin name and update UI
-    loadSettings();
-    showPage('dashboard');
-}
-
-// --- Action Execution ---
+// ===============================================
+// 4. ACTION EXECUTION LOGIC
+// ===============================================
 
 function selectAction(action, accent) {
     selectedAction = action;
@@ -295,10 +345,15 @@ function selectAction(action, accent) {
     else reasonLabel.textContent = 'Grund:';
     
     // Log the selection
-    logAction(adminName, `Aktion ausgewählt: ${action}`, 'info');
+    logAction(adminName || 'Anon', `Aktion ausgewählt: ${action}`, 'info');
 }
 
 async function executeAction() {
+    if (!adminName) {
+        logAction('System', 'Aktion fehlgeschlagen: Bitte melden Sie sich zuerst an.', 'error');
+        return;
+    }
+
     if (!selectedAction) {
         logAction(adminName, 'Keine Aktion ausgewählt.', 'warn');
         return;
@@ -314,8 +369,13 @@ async function executeAction() {
     }
 
     // Simple validation for required fields
-    if ((selectedAction === 'warn' && !reason) || (selectedAction === 'ban' && !reason)) {
+    const requiresReason = selectedAction !== 'kick' && selectedAction !== 'unban';
+    if (requiresReason && !reason) {
         logAction(adminName, `Aktion ${selectedAction.toUpperCase()} fehlgeschlagen: Grund ist obligatorisch.`, 'error');
+        return;
+    }
+    if ((selectedAction === 'ban' || selectedAction === 'mute' || selectedAction === 'warn') && !duration) {
+        logAction(adminName, `Aktion ${selectedAction.toUpperCase()} fehlgeschlagen: Dauer ist obligatorisch.`, 'error');
         return;
     }
 
@@ -327,7 +387,8 @@ async function executeAction() {
         logMessage += ` | Dauer: ${duration}`;
     }
 
-    logAction(adminName, logMessage, selectedAccent === 'red' ? 'warn' : 'info', targetUser);
+    // Write the actual mod action log
+    logAction(adminName, logMessage, selectedAccent === 'red' ? 'error' : (selectedAccent === 'yellow' ? 'warn' : 'info'), targetUser);
     
     // Clear inputs after execution
     document.getElementById('action-input').value = '';
@@ -338,10 +399,12 @@ async function executeAction() {
     logAction('System', `Befehl erfolgreich gesendet: ${logMessage}`, 'info');
 }
 
-// --- Event Listeners Setup ---
+// ===============================================
+// 5. EVENT LISTENERS SETUP
+// ===============================================
 
 window.onload = function() {
-    loadSettings();
+    // Initialisierung von Firebase (ruft intern loadInitialData auf)
     initializeFirebase();
 
     // 1. Navigation Event Listeners
@@ -351,22 +414,21 @@ window.onload = function() {
             const pageId = e.target.getAttribute('data-page');
             if (pageId) {
                 showPage(pageId);
-                // Log navigation, but only on page change
                 logAction(adminName || 'Anon', `Navigiert zu: ${pageId}`, 'info');
             }
         });
     });
 
     // 2. Login Modal Submission
-    document.getElementById('login-btn').addEventListener('click', () => {
+    document.getElementById('login-btn').addEventListener('click', async () => {
         const inputName = document.getElementById('admin-name-input').value.trim();
         if (inputName) {
-            updateAdminInfo(inputName);
+            await updateAdminInfo(inputName); // Speichert in Firestore
             hideLoginModal();
             logAction(inputName, 'Erfolgreich als Admin eingeloggt.', 'system');
         } else {
-            // Use custom modal for error instead of alert
-            logAction('System', 'Bitte geben Sie Ihren Administratornamen ein.', 'error');
+            // NOTE: Using logAction as replacement for alert/confirm
+            logAction('System', 'Bitte geben Sie Ihren Administratornamen ein.', 'error'); 
         }
     });
 
@@ -377,7 +439,7 @@ window.onload = function() {
     // 3a. Theme change listeners
     document.querySelectorAll('input[name="theme-radio"]').forEach(radio => {
         radio.addEventListener('change', (e) => {
-            applyTheme(e.target.value);
+            applyTheme(e.target.value); // Speichert in Firestore
             logAction(adminName, `Design geändert zu: ${e.target.value === 'dark' ? 'Dunkel' : 'Hell'}`, 'info');
         });
     });
@@ -385,7 +447,6 @@ window.onload = function() {
     // 4. Action Tile Selection
     document.querySelectorAll('.action-tile').forEach(tile => {
         tile.addEventListener('click', (e) => {
-            // Find the closest tile element to ensure we get the correct data attributes
             const targetTile = e.currentTarget;
             const action = targetTile.getAttribute('data-action');
             const accent = targetTile.getAttribute('data-accent');
@@ -397,12 +458,12 @@ window.onload = function() {
     document.getElementById('execute-action-btn').addEventListener('click', executeAction);
 
     // 6. Logout Button
-    document.getElementById('logout-btn').addEventListener('click', () => {
-        updateAdminInfo(''); // Clear admin name
-        showLoginModal();
-        logAction(adminName, 'Erfolgreich abgemeldet.', 'system');
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+        // Firebase sign out löst onAuthStateChanged aus, welches die UI aufräumt
+        await signOut(auth);
     });
 
     // Initial action selection (select 'ban' by default)
-    selectAction('ban', 'red');
+    // Wird nach loadInitialData aufgerufen, um sicherzustellen, dass die UI-Elemente bereit sind.
+    // selectAction('ban', 'red'); 
 };

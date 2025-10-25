@@ -1,258 +1,309 @@
 /* --- BASIS VARIABLEN (DARK THEME - Das aktuelle Design) --- */
 :root {
-    --bg-color: #1a1a1a;        /* Dunkelgrau Hintergrund (Aus Screenshot) */
-    --card-color: #252526;      /* Dunklere Boxen (Aus Screenshot) */
-    --text-color: #f1f1f1;      /* Heller Text */
-    --accent-color: #4CAF50;    /* GRÜNE Akzentfarbe (Aus Screenshot) */
-    --danger-color: #f44336;    /* Rot für Bans/Logout */
-    --primary-btn-color: #007bff; /* Blau für Light Theme */
-    --transition-speed: 0.3s;
+    --bg-color: #1a1a1a;        /* Dunkelgrau Hintergrund (Aus Screenshot) */
+    --card-color: #252526;      /* Dunklere Boxen (Aus Screenshot) */
+    --text-color: #f1f1f1;      /* Heller Text */
+    --accent-color: #4CAF50;    /* GRÜNE Akzentfarbe (Aus Screenshot) */
+    --danger-color: #f44336;    /* Rot für Bans/Logout */
+    --primary-btn-color: #007bff; /* Blau für Light Theme */
+    --transition-speed: 0.3s;
+    --warn-color: #ffc107; /* Gelb für Warns */
 }
 
 /* --- ALLGEMEINE STYLES --- */
 body {
-    font-family: Arial, sans-serif;
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    margin: 0;
-    padding: 0;
-    transition: background-color var(--transition-speed), color var(--transition-speed);
+    font-family: 'Inter', Arial, sans-serif; /* Inter wurde beibehalten */
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 0;
+    transition: background-color var(--transition-speed), color var(--transition-speed);
 }
 
 .primary-btn {
-    background-color: var(--accent-color);
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: opacity var(--transition-speed);
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: opacity var(--transition-speed);
 }
 .primary-btn:hover {
-    opacity: 0.8;
+    opacity: 0.8;
 }
 
 h2 {
-    border-bottom: 2px solid #333;
-    padding-bottom: 10px;
-    margin-bottom: 20px;
-    color: var(--text-color);
+    border-bottom: 2px solid #333;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    color: var(--text-color);
+    font-weight: bold; /* Hinzugefügt für Konsistenz */
 }
 h3 {
-    margin-top: 30px;
-    margin-bottom: 15px;
+    margin-top: 30px;
+    margin-bottom: 15px;
+    color: var(--text-color);
+    font-weight: 600; /* Hinzugefügt für Konsistenz */
+}
+
+/* --- INPUTS / BUTTONS (Basis für execute box) --- */
+.input-field {
+    width: 100%;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #333;
+    background-color: #333;
     color: var(--text-color);
+    box-sizing: border-box;
+    font-size: 1em;
+    transition: all var(--transition-speed);
+}
+
+.input-field:focus {
+    outline: none;
+    border-color: var(--accent-color);
 }
 
 
 /* --- TOP BAR / NAVIGATION --- */
 .top-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px 30px;
-    background-color: var(--card-color);
-    border-bottom: 3px solid var(--accent-color);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 30px;
+    background-color: var(--card-color);
+    border-bottom: 3px solid var(--accent-color);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
 .panel-title {
-    font-size: 1.4em;
-    font-weight: bold;
-    color: var(--text-color);
+    font-size: 1.4em;
+    font-weight: bold;
+    color: var(--text-color);
 }
 
 .main-nav {
-    display: flex;
+    display: flex;
 }
 
 .nav-item {
-    color: var(--text-color);
-    text-decoration: none;
-    padding: 8px 15px;
-    margin: 0 5px;
-    border-radius: 4px;
-    transition: background-color var(--transition-speed), color var(--transition-speed);
+    color: var(--text-color);
+    text-decoration: none;
+    padding: 8px 15px;
+    margin: 0 5px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color var(--transition-speed), color var(--transition-speed);
 }
 
 .nav-item:hover {
-    background-color: #333;
+    background-color: #333;
 }
 
 .nav-item.active {
-    background-color: var(--accent-color);
-    color: white;
+    background-color: var(--accent-color);
+    color: white;
 }
 
 .user-info {
-    display: flex;
-    align-items: center;
-    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    font-size: 0.9em;
 }
 
 .admin-name {
-    font-weight: bold;
-    color: var(--accent-color);
-    margin-right: 15px;
+    font-weight: bold;
+    color: var(--accent-color);
+    margin-right: 15px;
 }
 
 .logout-btn {
-    background-color: var(--danger-color);
-    color: white;
-    border: none;
-    padding: 8px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-left: 10px;
+    background-color: var(--danger-color);
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 10px;
+    transition: opacity var(--transition-speed);
 }
 .logout-btn:hover {
-    opacity: 0.9;
+    opacity: 0.9;
+}
+.icon-btn {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 1.5em;
+    cursor: pointer;
+    margin: 0 5px; /* Anpassung für besseren Abstand in der Top Bar */
+    padding: 5px;
+    border-radius: 50%;
+    line-height: 1;
+    transition: color var(--transition-speed), background-color var(--transition-speed);
+}
+.icon-btn:hover {
+    color: var(--accent-color);
+    background-color: #333;
 }
 
 
 /* --- CONTENT AREA & PAGES --- */
 .content-area {
-    padding: 30px;
+    max-width: 1280px; /* max-w-7xl */
+    margin: 0 auto; /* mx-auto */
+    padding: 30px;
 }
 
 .page {
-    display: none;
-    animation: fadeIn 0.5s;
+    display: none;
+    animation: fadeIn 0.5s;
 }
 
 .page.active {
-    display: block;
+    display: block;
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 
 /* --- DASHBOARD STYLES (wie im Screenshot) --- */
 .dashboard-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-    margin-top: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+    margin-bottom: 30px;
 }
 
 .stat-card {
-    background-color: var(--card-color);
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
-    border-left: 5px solid var(--accent-color); /* Alle Stat-Cards haben den grünen Akzent */
-    transition: background-color var(--transition-speed), border-left-color var(--transition-speed);
+    background-color: var(--card-color);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    border-left: 5px solid var(--accent-color); /* Alle Stat-Cards haben den grünen Akzent */
+    transition: background-color var(--transition-speed), border-left-color var(--transition-speed);
 }
+
 /* Die Klasse .accent wird beibehalten, aber aktuell hat es denselben Effekt wie die Standard-Card */
 .stat-card.accent {
-    border-left-color: var(--accent-color);
+    border-left-color: var(--accent-color);
 }
 
 .stat-card h3 {
-    margin-top: 0;
-    font-size: 1em;
-    color: #aaa;
+    margin-top: 0;
+    font-size: 1em;
+    color: #aaa;
+    font-weight: 500;
 }
 
 .stat-value {
-    font-size: 2.5em;
-    font-weight: bold;
-    margin: 0;
-    color: var(--text-color); 
+    font-size: 2.5em;
+    font-weight: bold;
+    margin: 0;
+    color: var(--text-color); 
 }
 
 /* Anpassung der Akzent-Werte (wie in den Screenshots) */
-.stat-card:nth-child(2) .stat-value, /* Aktive Bans ist grün, um es hervorzuheben */
-.stat-card.accent .stat-value { /* Nächster Event */
-    color: var(--accent-color);
-}
+/* Stat card 1: Active Warns - Yellow */
+.dashboard-grid > div:nth-child(1) .stat-value { color: var(--warn-color); }
+.dashboard-grid > div:nth-child(1) { border-left-color: var(--warn-color); }
+
+/* Stat card 2: Active Bans - Red */
+.dashboard-grid > div:nth-child(2) .stat-value { color: var(--danger-color); }
+.dashboard-grid > div:nth-child(2) { border-left-color: var(--danger-color); }
+
+/* Stat card 3: Next Event - Green */
+.dashboard-grid > div:nth-child(3) .stat-value { color: var(--accent-color); }
+.dashboard-grid > div:nth-child(3) { border-left-color: var(--accent-color); }
 
 
 /* --- ADMIN AKTIONEN / GRID STYLES --- */
 .search-bar-top {
-    margin-bottom: 30px;
+    margin-bottom: 30px;
 }
 #player-search-top {
-    width: 300px;
-    padding: 10px;
-    border-radius: 4px;
-    border: 1px solid #333;
-    background-color: #333;
-    color: var(--text-color);
-    font-size: 1em;
+    /* Style geerbt von .input-field */
 }
 
 .actions-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 20px;
-    margin-bottom: 40px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
 }
 
 .action-tile {
-    background-color: var(--card-color);
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
-    cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
-    border-top: 5px solid transparent; /* Für Akzentfarbe */
+    background-color: var(--card-color);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    border-top: 5px solid transparent; /* Für Akzentfarbe */
 }
 
 .action-tile:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.6);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.6);
 }
 
 .action-tile.active {
-    /* WICHTIG: Auswahlrahmen MUSS die aktuelle Akzentfarbe (Grün) verwenden */
-    border: 2px solid var(--accent-color);
-    box-shadow: 0 0 15px rgba(76, 175, 80, 0.5); /* Grüner Schein für Auswahl */
+    /* WICHTIG: Auswahlrahmen MUSS die aktuelle Akzentfarbe (Grün) verwenden */
+    border: 2px solid var(--accent-color);
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.5); /* Grüner Schein für Auswahl */
 }
 
 .action-tile h4 {
-    margin: 5px 0 5px 0;
-    font-size: 1.1em;
+    margin: 5px 0 5px 0;
+    font-size: 1.1em;
+    font-weight: bold;
 }
 
 .action-tile p {
-    font-size: 0.8em;
-    color: #aaa;
-    margin: 0;
+    font-size: 0.8em;
+    color: #aaa;
+    margin: 0;
 }
 
 .action-tile .icon {
-    font-size: 2em;
-    display: block;
-    margin-bottom: 10px;
+    font-size: 2em;
+    display: block;
+    margin-bottom: 10px;
 }
 
 /* Farben für die Kacheln (Hier werden die Akzentfarben für die Kacheln definiert) */
-.action-tile.yellow { border-top-color: #ffc107; } /* Standard Gelb für Verwarnungen */
+.action-tile.yellow { border-top-color: var(--warn-color); } /* Standard Gelb für Verwarnungen */
 .action-tile.red { border-top-color: var(--danger-color); } /* Standard Rot für Bans/Kicks */
 .action-tile.green { border-top-color: var(--accent-color); } /* Aktuelle Akzentfarbe (Grün) für Entbannen */
 
 /* --- Befehl Ausführen (Execute Box) --- */
 .execute-box {
-    background-color: var(--card-color);
-    padding: 25px;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    background-color: var(--card-color);
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
 }
 
 .execute-box label {
-    display: block;
-    margin-top: 15px;
-    margin-bottom: 5px;
-    font-weight: bold;
-    color: #ccc;
+    display: block;
+    margin-top: 15px;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #ccc;
 }
 
+/* Input styles sind jetzt in .input-field definiert */
 .execute-box input[type="text"] {
-    width: 100%;
+    /* Spezifische Anpassungen hier falls nötig */
+}
+.execute-box textarea {
+    /* Style für Textarea anpassen */
+    min-height: 80px;
     padding: 10px;
     border-radius: 4px;
     border: 1px solid #333;
@@ -260,146 +311,159 @@ h3 {
     color: var(--text-color);
     box-sizing: border-box;
     font-size: 1em;
+    width: 100%;
 }
 
+
 #execute-action-btn {
-    width: 100%;
-    /* Button Farbe MUSS die aktuelle Akzentfarbe (Grün) verwenden */
-    background-color: var(--accent-color);
-    color: white;
-    border: none;
-    padding: 15px;
-    cursor: pointer;
-    border-radius: 4px;
-    margin-top: 25px;
-    font-size: 1.1em;
-    font-weight: bold;
-    transition: opacity var(--transition-speed);
+    width: 100%;
+    /* Button Farbe MUSS die aktuelle Akzentfarbe (Grün) verwenden */
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 15px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-top: 25px;
+    font-size: 1.1em;
+    font-weight: bold;
+    transition: opacity var(--transition-speed);
 }
 #execute-action-btn:hover {
-    opacity: 0.9;
+    opacity: 0.9;
 }
 
 .log-box {
-    background-color: #111;
-    padding: 20px;
-    border-radius: 4px;
-    border: 1px solid #333;
+    background-color: var(--card-color);
+    padding: 20px;
+    border-radius: 4px;
+    border: 1px solid #333;
+    margin-top: 30px;
 }
+/* Log List Styles */
+#log-list {
+    max-height: 400px;
+    overflow-y: auto;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.log-entry {
+    padding: 8px 0;
+    border-bottom: 1px solid #333;
+    font-size: 0.875rem;
+    display: flex;
+    gap: 12px;
+}
+.log-entry:last-child {
+    border-bottom: none;
+}
+.log-time { color: #aaa; }
+.log-admin { font-weight: bold; color: var(--text-color); }
+.log-target { font-style: italic; color: #007bff; /* Blaue Farbe für Ziel-User */ }
+
+/* Log Colors (Angepasst an die neuen Variablen) */
+.log-warn { background-color: rgba(255, 193, 7, 0.1); padding-left: 8px; border-left: 4px solid var(--warn-color); }
+.log-error { background-color: rgba(244, 67, 54, 0.1); padding-left: 8px; border-left: 4px solid var(--danger-color); }
+.log-system { background-color: rgba(0, 123, 255, 0.1); padding-left: 8px; border-left: 4px solid var(--primary-btn-color); } /* Blau als Systemfarbe */
 
 
 /* --- LOGIN SCREEN und MODAL STYLES --- */
 
 .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.9);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 2000;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity var(--transition-speed), visibility var(--transition-speed);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transition-speed), visibility var(--transition-speed);
 }
 
 .modal-overlay.active {
-    opacity: 1;
-    visibility: visible;
+    opacity: 1;
+    visibility: visible;
 }
 
 /* --- Login Card --- */
 .login-card {
-    background-color: var(--card-color);
-    padding: 40px 30px;
-    border-radius: 10px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
-    width: 350px;
-    text-align: center;
+    background-color: var(--card-color);
+    padding: 40px 30px;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+    width: 350px;
+    text-align: center;
 }
 
 .login-card h2 {
-    color: var(--text-color);
-    border-bottom: none;
-    margin-bottom: 5px;
+    color: var(--text-color);
+    border-bottom: none;
+    margin-bottom: 5px;
+    font-size: 1.5em;
 }
 
 .login-card p {
-    color: #aaa;
-    margin-bottom: 25px;
+    color: #aaa;
+    margin-bottom: 25px;
 }
 
 .login-icon {
-    margin-bottom: 20px;
+    margin-bottom: 20px;
 }
 
 #admin-name-input {
-    width: calc(100% - 20px);
-    padding: 15px 10px;
-    border-radius: 4px;
-    border: 1px solid #333;
-    background-color: #333;
-    color: var(--text-color);
-    box-sizing: border-box;
-    font-size: 1em;
-    margin-bottom: 20px;
-    text-align: center;
+    /* Style geerbt von .input-field, zentriert */
+    width: 100%;
+    margin-bottom: 20px;
+    text-align: center;
 }
 
 /* --- Settings Modal --- */
 .modal-content {
-    background-color: var(--card-color);
-    padding: 25px;
-    border-radius: 8px;
-    width: 400px;
-    position: relative;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+    background-color: var(--card-color);
+    padding: 25px;
+    border-radius: 8px;
+    width: 400px;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
 }
 
 .close-btn {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    background: none;
-    border: none;
-    color: #aaa;
-    font-size: 1.2em;
-    cursor: pointer;
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    color: #aaa;
+    font-size: 1.2em;
+    cursor: pointer;
 }
-
-.icon-btn {
-    background: none;
-    border: none;
-    color: var(--text-color);
-    font-size: 1.5em;
-    cursor: pointer;
-    margin: 0 10px;
-    transition: color var(--transition-speed);
-}
-.icon-btn:hover {
-    color: var(--accent-color);
+.close-btn:hover {
+    color: var(--danger-color);
 }
 
 .setting-group {
-    border-top: 1px solid #333;
-    padding-top: 20px;
-    margin-top: 20px;
+    border-top: 1px solid #333;
+    padding-top: 20px;
+    margin-top: 20px;
 }
 
 .radio-group label {
-    display: block;
-    margin-bottom: 10px;
-    font-weight: normal;
-    cursor: pointer;
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    font-weight: normal;
+    cursor: pointer;
+    gap: 8px;
 }
-
-.hint {
-    font-size: 0.8em;
-    color: #777;
-    margin-top: 10px;
+.radio-group input[type="radio"] {
+    accent-color: var(--accent-color);
 }
 
 
@@ -407,42 +471,89 @@ h3 {
 /* === HELLES DESIGN REGELN (body.light-theme) === */
 /* ============================================== */
 body.light-theme {
-    --bg-color: #f0f2f5;        /* Heller Hintergrund */
-    --card-color: #ffffff;      /* Weiße Boxen */
-    --text-color: #333333;      /* Dunkler Text */
-    --accent-color: #007bff;    /* Blauer Akzent für helles Design */
-    --danger-color: #f44336;
+    --bg-color: #f0f2f5;        /* Heller Hintergrund */
+    --card-color: #ffffff;      /* Weiße Boxen */
+    --text-color: #333333;      /* Dunkler Text */
+    --accent-color: #007bff;    /* Blauer Akzent für helles Design */
+    --danger-color: #f44336;
+    --warn-color: #ffc107;
 }
 
 /* Spezifische Anpassungen für Light Theme */
+body.light-theme h2 {
+    border-bottom-color: #e0e0e0;
+}
 body.light-theme .top-bar {
-    border-bottom: 3px solid var(--accent-color);
+    border-bottom: 3px solid var(--accent-color);
 }
-body.light-theme .main-nav a:hover {
-    background-color: #e0e0e0;
-}
-body.light-theme .nav-item.active {
-    background-color: var(--accent-color);
-    color: white; 
-}
-body.light-theme .stat-card {
-    border-left-color: #ced4da;
-}
-body.light-theme .stat-card.accent {
-    border-left-color: var(--accent-color);
-}
-body.light-theme .action-tile.active {
-    border: 2px solid var(--accent-color);
-    box-shadow: 0 0 15px rgba(0, 123, 255, 0.5); /* Blauer Schein für Auswahl */
-}
-body.light-theme #admin-name-input,
-body.light-theme #player-search-top,
-body.light-theme .execute-box input[type="text"] {
-    background-color: #e9ecef;
-    border-color: #ced4da;
+body.light-theme .main-nav a {
     color: #333;
 }
+body.light-theme .main-nav a:hover {
+    background-color: #e0e0e0;
+}
+body.light-theme .nav-item.active {
+    background-color: var(--accent-color);
+    color: white; 
+}
+
+/* STAT CARDS */
+body.light-theme .stat-card {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+body.light-theme .dashboard-grid > div:nth-child(1) { border-left-color: var(--warn-color); }
+body.light-theme .dashboard-grid > div:nth-child(2) { border-left-color: var(--danger-color); }
+body.light-theme .dashboard-grid > div:nth-child(3) { border-left-color: var(--accent-color); }
+
+body.light-theme .stat-card h3 {
+    color: #777;
+}
+
+/* INPUTS/BOXES */
+body.light-theme .input-field,
+body.light-theme .execute-box textarea {
+    background-color: #e9ecef;
+    border-color: #ced4da;
+    color: #333;
+}
+body.light-theme .input-field:focus {
+    border-color: var(--accent-color);
+}
+
+/* ACTIONS GRID */
+body.light-theme .action-tile {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+body.light-theme .action-tile:hover {
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+}
+body.light-theme .action-tile.active {
+    border: 2px solid var(--accent-color);
+    box-shadow: 0 0 15px rgba(0, 123, 255, 0.5); /* Blauer Schein für Auswahl */
+}
+
+/* LOG BOX */
 body.light-theme .log-box {
-    background-color: #f8f9fa;
-    border-color: #ced4da;
+    background-color: #f8f9fa;
+    border-color: #ced4da;
+}
+body.light-theme .log-entry {
+    border-bottom-color: #e0e0e0;
+}
+body.light-theme .log-time { color: #777; }
+body.light-theme .log-target { color: var(--accent-color); }
+
+/* MODALS */
+body.light-theme .modal-content,
+body.light-theme .login-card {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+body.light-theme .setting-group {
+    border-top-color: #e0e0e0;
+}
+body.light-theme .icon-btn {
+    color: #333;
+}
+body.light-theme .icon-btn:hover {
+    background-color: #e0e0e0;
 }

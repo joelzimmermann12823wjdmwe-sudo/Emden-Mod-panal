@@ -1,176 +1,413 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nordstadt-RP Mod Panel</title>
-    <link rel="stylesheet" href="css/style.css">
-</head>
-<body class="dark-theme"> <!-- Standardmäßig auf Dunkles Design setzen -->
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, collection, onSnapshot, query, serverTimestamp, addDoc, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    <!-- ============================================== -->
-    <!-- === 0. LOGIN SCREEN (Startet sichtbar, bis Login) === -->
-    <!-- ============================================== -->
-    <div id="login-screen" class="modal-overlay active">
-        <div class="login-card">
-            <div class="login-icon">
-                <!-- Icon im Stil des Panels (grüner Akzent) -->
-                <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" fill="var(--accent-color)"/>
-                    <path d="M12 5L12 19" stroke="var(--accent-color)" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M8 9L12 5L16 9" stroke="var(--accent-color)" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-            </div>
-            <h2>Admin-Login</h2>
-            <p>Bitte gib deinen Admin-Namen ein, um fortzufahren.</p>
+// --- Global Variables and Firebase Setup ---
+
+// Mandatory Canvas global variables
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+// Firebase references (will be initialized later)
+let app, db, auth;
+
+// App State
+let adminName = localStorage.getItem('adminName') || null;
+let userId = null;
+let selectedAction = 'ban'; // Default action
+let isAuthReady = false;
+
+// Collection path for public/shared moderation logs
+const LOGS_COLLECTION_PATH = `/artifacts/${appId}/public/data/mod_logs`;
+
+// Utility to safely get elements
+const get = (selector) => document.querySelector(selector);
+const getAll = (selector) => document.querySelectorAll(selector);
+
+// --- Utility Functions ---
+
+/**
+ * Calculates the expiry date based on a duration string (e.g., "7d", "24h", "permanent").
+ * @param {string} durationStr - The duration string.
+ * @returns {Date | null} The future expiry Date object, or null for 'permanent' or invalid.
+ */
+function calculateExpiry(durationStr) {
+    if (!durationStr) return null;
+    const lowerStr = durationStr.toLowerCase();
+    if (lowerStr === 'permanent') {
+        return null; // Null signifies permanent
+    }
+
+    const match = lowerStr.match(/^(\d+)([hdwmy])$/i);
+    if (!match) return null; // Invalid format defaults to permanent/null
+
+    const value = parseInt(match[1]);
+    const unit = match[2];
+    let date = new Date();
+
+    switch (unit) {
+        case 'h': date.setHours(date.getHours() + value); break;
+        case 'd': date.setDate(date.getDate() + value); break;
+        case 'w': date.setDate(date.getDate() + value * 7); break;
+        case 'm': date.setMonth(date.getMonth() + value); break;
+        case 'y': date.setFullYear(date.getFullYear() + value); break;
+        default: return null;
+    }
+    return date;
+}
+
+/**
+ * Formats a Date object into a readable time string (HH:MM:SS).
+ * @param {Date} date - The date to format.
+ * @returns {string} Formatted time string.
+ */
+function formatTime(date) {
+    if (!date) return 'N/A';
+    return date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+/**
+ * Toggles a modal's visibility.
+ * @param {string} modalId - The ID of the modal overlay element.
+ * @param {boolean} show - True to show, false to hide.
+ */
+function toggleModal(modalId, show) {
+    const modal = get(modalId);
+    if (modal) {
+        modal.classList.toggle('active', show);
+    }
+}
+
+// --- Theme Management ---
+
+function applyTheme(theme) {
+    const body = get('body');
+    if (theme === 'light') {
+        body.classList.add('light-theme');
+        get('#light-theme-radio').checked = true;
+    } else {
+        body.classList.remove('light-theme');
+        get('#dark-theme-radio').checked = true;
+    }
+    localStorage.setItem('theme', theme);
+}
+
+// Load theme on startup
+const savedTheme = localStorage.getItem('theme') || 'dark';
+applyTheme(savedTheme);
+
+// --- Auth and UI Update Functions ---
+
+async function handleLogin() {
+    const input = get('#admin-name-input');
+    const name = input.value.trim();
+
+    if (name.length < 3) {
+        console.error('Admin name too short.');
+        input.classList.add('border-red-500');
+        return;
+    }
+    input.classList.remove('border-red-500');
+    
+    adminName = name;
+    localStorage.setItem('adminName', adminName);
+    updateAdminDisplay();
+    toggleModal('#login-modal', false);
+}
+
+function updateAdminDisplay() {
+    const nameDisplay = get('#admin-name-display');
+    const idDisplay = get('#admin-id-display');
+
+    nameDisplay.textContent = adminName || 'Gast';
+    idDisplay.textContent = `ID: ${userId ? userId : 'Nicht authentifiziert'}`;
+    
+    // Show login modal if adminName is missing after auth is ready
+    if (isAuthReady && !adminName) {
+        toggleModal('#login-modal', true);
+    } else if (isAuthReady) {
+        toggleModal('#login-modal', false);
+    }
+}
+
+function handleLogout() {
+    signOut(auth).then(() => {
+        adminName = null;
+        localStorage.removeItem('adminName');
+        // Reload or prompt for new login
+        window.location.reload();
+    }).catch(console.error);
+}
+
+// --- Moderation Action Logic ---
+
+function selectAction(action) {
+    selectedAction = action;
+    const tiles = getAll('.action-tile');
+    tiles.forEach(tile => {
+        tile.classList.toggle('active', tile.dataset.action === action);
+    });
+
+    const actionBtn = get('#execute-action-btn');
+    const durationContainer = get('#duration-container');
+    const reasonLabel = get('#reason-label');
+
+    actionBtn.textContent = `Aktion '${action.toUpperCase()}' ausführen`;
+
+    // Show/Hide duration field based on action
+    const requiresDuration = action === 'ban' || action === 'warn';
+    durationContainer.style.display = requiresDuration ? 'block' : 'none';
+    
+    // Update reason label text
+    reasonLabel.textContent = action === 'unban' ? 'Grund für UNBAN (obligatorisch):' : 'Grund (obligatorisch):';
+}
+
+async function handleActionExecute() {
+    if (!db || !userId || !adminName) {
+        console.error("Datenbank oder Admin-Informationen nicht bereit.");
+        return;
+    }
+
+    const targetName = get('#action-input').value.trim();
+    const reason = get('#reason-reason').value.trim();
+    const durationInput = get('#reason-duration').value.trim();
+    
+    const requiresDuration = selectedAction === 'ban' || selectedAction === 'warn';
+    const duration = requiresDuration ? durationInput : 'N/A';
+
+    // Simple validation
+    if (!targetName) {
+        console.error("Spielername fehlt.");
+        get('#action-input').classList.add('border-red-500');
+        return;
+    } else {
+        get('#action-input').classList.remove('border-red-500');
+    }
+    
+    if (!reason) {
+        console.error("Begründung fehlt.");
+        get('#reason-reason').classList.add('border-red-500');
+        return;
+    } else {
+        get('#reason-reason').classList.remove('border-red-500');
+    }
+    
+    if (requiresDuration && !duration) {
+        console.error("Dauer fehlt.");
+        get('#reason-duration').classList.add('border-red-500');
+        return;
+    } else if (requiresDuration) {
+        get('#reason-duration').classList.remove('border-red-500');
+    }
+    
+    // Calculate expiry date for BAN/WARN
+    let expiryDate = null;
+    if (selectedAction === 'ban' || selectedAction === 'warn') {
+        expiryDate = calculateExpiry(duration);
+    }
+
+    // Prepare log entry
+    const logEntry = {
+        action: selectedAction.toUpperCase(),
+        targetName: targetName,
+        targetId: targetName, // Using name as ID for mock target ID
+        reason: reason,
+        duration: duration,
+        adminName: adminName,
+        adminId: userId,
+        timestamp: serverTimestamp(),
+        expiry: expiryDate ? Timestamp.fromDate(expiryDate) : null,
+    };
+
+    try {
+        await addDoc(collection(db, LOGS_COLLECTION_PATH), logEntry);
+        console.log(`Aktion '${selectedAction.toUpperCase()}' erfolgreich für ${targetName} ausgeführt.`);
+        
+        // Clear inputs after successful execution
+        get('#action-input').value = '';
+        get('#reason-reason').value = '';
+        get('#reason-duration').value = '';
+        selectAction('ban'); // Reset to default action
+    } catch (error) {
+        console.error("Fehler beim Speichern des Moderations-Logs:", error);
+    }
+}
+
+
+// --- Realtime Data Listeners ---
+
+function renderLogEntry(log) {
+    const time = formatTime(log.timestamp.toDate());
+    const logClass = log.action === 'WARN' ? 'log-warn' : 
+                     log.action === 'BAN' ? 'log-error' : 
+                     'log-system';
+    
+    const durationText = log.duration && log.duration !== 'N/A' ? `(${log.duration})` : '';
+    let statusText = '';
+
+    if (log.expiry) {
+        const isExpired = log.expiry.toDate() < new Date();
+        const expiryTime = log.expiry.toDate().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' });
+        statusText = isExpired ? '<span class="text-gray-500">[ABGELAUFEN]</span>' : `<span class="text-gray-400">-> Läuft ab: ${expiryTime}</span>`;
+    }
+
+    const li = document.createElement('li');
+    li.className = `log-entry ${logClass}`;
+    li.innerHTML = `
+        <span class="log-time w-16 min-w-16">${time}</span>
+        <span class="log-admin">${log.adminName}</span>
+        <span class="text-gray-300">hat</span>
+        <span class="log-target font-mono">${log.targetName}</span>
+        <span class="text-white font-bold">${log.action}</span>
+        <span class="text-gray-400">${durationText} wegen "${log.reason}"</span>
+        ${statusText}
+    `;
+    return li;
+}
+
+function setupRealtimeListeners() {
+    if (!db) {
+        console.error("Firestore-Instanz nicht verfügbar.");
+        return;
+    }
+    
+    // 1. Listen for Mod Logs
+    onSnapshot(query(collection(db, LOGS_COLLECTION_PATH)), (snapshot) => {
+        const logList = get('#log-list');
+        logList.innerHTML = ''; // Clear existing logs
+        
+        let activeBans = 0;
+        let activeWarns = 0;
+        const now = new Date().getTime();
+        
+        const logs = snapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() }))
+            // Sort by timestamp descending
+            .sort((a, b) => b.timestamp?.toDate().getTime() - a.timestamp?.toDate().getTime());
             
-            <input type="text" id="admin-name-input" placeholder="Dein Admin-Name (z.B. Joel.Z)" value="Admin Hans">
+        if (logs.length === 0) {
+            logList.innerHTML = '<li class="text-gray-500 text-sm">Keine Logs gefunden.</li>';
+            get('#active-warns-value').textContent = '0';
+            get('#active-bans-value').textContent = '0';
+            return;
+        }
+
+        logs.forEach((log) => {
+            logList.appendChild(renderLogEntry(log));
+
+            // Check for active bans/warns
+            if (log.action === 'BAN' || log.action === 'WARN') {
+                const expiryTime = log.expiry?.toDate().getTime();
+                
+                // If expiry is null (permanent) or in the future
+                const isActive = log.expiry === null || (expiryTime && expiryTime > now);
+
+                if (isActive) {
+                    if (log.action === 'BAN') activeBans++;
+                    if (log.action === 'WARN') activeWarns++;
+                }
+            }
+        });
+
+        // 2. Update Stats
+        get('#active-warns-value').textContent = activeWarns.toString();
+        get('#active-bans-value').textContent = activeBans.toString();
+        get('#next-event-value').textContent = 'Community-Runde (01.12.)'; // Hardcoded for this example
+    }, (error) => {
+        console.error("Fehler beim Abrufen der Logs:", error);
+        get('#log-list').innerHTML = `<li class="text-red-400 text-sm">Fehler beim Laden der Logs: ${error.message}</li>`;
+    });
+}
+
+// --- Initialization and Event Wiring ---
+
+window.onload = async function() {
+    setLogLevel('error'); // Set log level to reduce console noise
+    console.log("Initializing Firebase...");
+
+    try {
+        app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+    } catch(e) {
+        console.error("Error initializing Firebase:", e);
+        // Display a general error message to the user
+        get('main').innerHTML = '<div class="card p-8 text-center text-red-500 font-bold rounded-xl">FEHLER: Firebase konnte nicht initialisiert werden. Überprüfen Sie die Konfiguration.</div>';
+        return;
+    }
+
+    // 1. Handle Authentication
+    await new Promise((resolve) => {
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                userId = user.uid;
+                console.log("Authenticated with user ID:", userId);
+            } else {
+                console.log("No user signed in. Attempting sign-in...");
+                try {
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                        userId = auth.currentUser.uid;
+                        console.log("Signed in with custom token.");
+                    } else {
+                        const anonUser = await signInAnonymously(auth);
+                        userId = anonUser.user.uid;
+                        console.log("Signed in anonymously.");
+                    }
+                } catch (error) {
+                    console.error("Authentication Error:", error);
+                }
+            }
+            isAuthReady = true;
+            updateAdminDisplay();
+            resolve();
+        });
+    });
+
+    // 2. Start Realtime Listeners
+    if (userId) {
+        setupRealtimeListeners();
+    } else {
+        get('#log-list').innerHTML = '<li class="text-red-400 text-sm">Authentifizierungsfehler. Logs können nicht geladen werden.</li>';
+    }
+
+
+    // 3. UI Event Listeners
+
+    // Navigation
+    getAll('.nav-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            const pageId = e.target.dataset.page;
+            // Update active state in nav
+            getAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+            e.target.classList.add('active');
             
-            <button id="login-button" class="primary-btn">
-                <span class="icon">☰</span> Zugang gewähren
-            </button>
-        </div>
-    </div>
+            // Show/Hide sections
+            getAll('.page').forEach(page => page.classList.add('hidden'));
+            get(`#${pageId}`).classList.remove('hidden');
+        });
+    });
 
+    // Action Tiles
+    getAll('.action-tile').forEach(tile => {
+        tile.addEventListener('click', () => selectAction(tile.dataset.action));
+    });
 
-    <!-- ============================================== -->
-    <!-- === 1. HAUPT-PANEL INHALT (Startet versteckt) === -->
-    <!-- ============================================== -->
-    <div id="main-panel" style="display: none;">
+    // Execute Button
+    get('#execute-action-btn').addEventListener('click', handleActionExecute);
 
-        <header class="top-bar">
-            <div class="panel-title">Nordstadt-RP Mod Panel</div>
-            <nav class="main-nav">
-                <a href="#dashboard" class="nav-item active" data-page="dashboard">Dashboard</a>
-                <a href="#user-management" class="nav-item" data-page="user-management">Admin-Aktionen</a>
-                <a href="#logs" class="nav-item" data-page="logs">Logs & Reporting</a>
-            </nav>
-            <div class="user-info">
-                Eingeloggt als: <span id="display-admin-name" class="admin-name"></span> 
-                <button id="open-settings-btn" class="icon-btn">⚙️</button> 
-                <button class="logout-btn" id="logout-button">Logout</button>
-            </div>
-        </header>
+    // Login/Logout/Settings
+    get('#login-btn').addEventListener('click', handleLogin);
+    get('#logout-btn').addEventListener('click', handleLogout);
+    get('#settings-btn').addEventListener('click', () => toggleModal('#settings-modal', true));
+    get('#close-settings-modal').addEventListener('click', () => toggleModal('#settings-modal', false));
 
-        <main class="content-area">
-            
-            <!-- === 1. DASHBOARD SEITE === -->
-            <div id="dashboard" class="page active">
-                <h2>Dashboard Übersicht</h2>
-                <div class="dashboard-grid">
-                    <!-- Diese Stat-Karten entsprechen dem Layout aus dem Video und den Screenshots -->
-                    <div class="stat-card">
-                        <h3>Online Spieler</h3>
-                        <p class="stat-value" id="stat-online-players">42</p>
-                    </div>
-                    <div class="stat-card">
-                        <h3>Aktive Bans</h3>
-                        <p class="stat-value" id="stat-active-bans">5</p>
-                    </div>
-                    <div class="stat-card">
-                        <h3>Offene Reports</h3>
-                        <p class="stat-value" id="stat-reports">12</p>
-                    </div>
-                    <div class="stat-card accent">
-                        <h3>Nächster Event</h3>
-                        <p class="stat-value" id="stat-event">Heute 20:00</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- === 2. ADMIN AKTIONEN SEITE (Wie im Video) === -->
-            <div id="user-management" class="page">
-                <h2>Admin-Aktionen</h2>
-                <div class="search-bar-top">
-                    <!-- Suchfeld für den Spieler (wie im Video) -->
-                    <input type="text" id="player-search-top" placeholder="Spieler suchen (Name oder ID...)">
-                </div>
-                <h3>Admin-Aktionen</h3>
-                <div class="actions-grid">
-                    <!-- Kacheln wie im Video, gestylt mit den aktuellen Farben -->
-                    <div class="action-tile yellow" data-action="Mündliche Verwarnung">
-                        <span class="icon">💬</span> 
-                        <h4>Mündliche Verwarnung</h4>
-                        <p>Zur Dokumentation, keine Spiel-Konsequenz.</p>
-                    </div>
-                    <div class="action-tile yellow" data-action="Schriftliche Verwarnung">
-                        <span class="icon">⚠️</span> 
-                        <h4>Schriftliche Verwarnung</h4>
-                        <p>Offizieller Warn-Eintrag.</p>
-                    </div>
-                    <div class="action-tile red" data-action="Spieler Kicken">
-                        <span class="icon">❌</span> 
-                        <h4>Spieler Kicken</h4>
-                        <p>Sofortiger Server-Ausschluss.</p>
-                    </div>
-                    <div class="action-tile red" data-action="1-Tages Ban">
-                        <span class="icon">🔴</span> 
-                        <h4>1-Tages Ban</h4>
-                        <p>Temporärer Server-Bann.</p>
-                    </div>
-                    <div class="action-tile red" data-action="Permanent Ban">
-                        <span class="icon">💀</span> 
-                        <h4>Permanent Ban</h4>
-                        <p>Endgültiger Server-Ausschluss.</p>
-                    </div>
-                    <div class="action-tile green" data-action="Entbannen">
-                        <span class="icon">✅</span> 
-                        <h4>Entbannen</h4>
-                        <p>Aufhebung eines bestehenden Server-Banns.</p>
-                    </div>
-                </div>
-                <h3>Befehl ausführen</h3>
-                <div class="execute-box">
-                    <label for="target-player">Ziel-Spielername / UserID</label>
-                    <input type="text" id="target-player" placeholder="Spielername oder ID eingeben">
-                    <label for="action-reason">Grund für die Aktion (Optional)</label>
-                    <input type="text" id="action-reason" placeholder="Z.B. Regelbruch Paragraf 3">
-                    <button id="execute-action-btn">
-                        Aktion senden (Ausgewählt: <span id="selected-action">Mündliche Verwarnung</span>)
-                    </button>
-                </div>
-                <h3 style="margin-top: 40px;">Gesamte Eintrags-Historie</h3>
-                <div class="log-box">
-                    <p style="text-align: center; color: #aaa;">Platzhalter: Die Historie wird hier angezeigt.</p>
-                </div>
-            </div>
-
-            <!-- === 3. LOGS & REPORTING SEITE === -->
-            <div id="logs" class="page">
-                <h2>Logs & Reporting</h2>
-                <p>Hier erscheinen detaillierte Admin- und Server-Logs. Diese Funktionalität ist aktuell nur ein Platzhalter.</p>
-            </div>
-            
-            <div id="settings" class="page" style="display:none;"></div> 
-
-        </main>
-    </div>
-
-    <!-- ============================================== -->
-    <!-- === 2. SETTINGS MODAL (Zum Design-Wechsel) === -->
-    <!-- ============================================== -->
-    <div id="settings-modal" class="modal-overlay">
-        <div class="modal-content">
-            <button class="close-btn" id="close-settings-btn">X</button>
-            <h2>Einstellungen</h2>
-            
-            <div class="setting-group">
-                <h4>Design auswählen</h4>
-                <div class="radio-group">
-                    <label>
-                        <input type="radio" name="theme" value="dark" checked>
-                        Dunkles Design
-                    </label>
-                    <label>
-                        <input type="radio" name="theme" value="light">
-                        Helles Design
-                    </label>
-                </div>
-                <p class="hint">Das Panel speichert dein gewähltes Design lokal im Browser.</p>
-            </div>
-        </div>
-    </div>
-
-    <script src="js/script.js"></script>
-</body>
-</html>
+    // Theme Radios
+    getAll('input[name="theme-radio"]').forEach(radio => {
+        radio.addEventListener('change', (e) => applyTheme(e.target.value));
+    });
+    
+    // Initial action selection to set up the form correctly
+    selectAction(selectedAction);
+};
