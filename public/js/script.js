@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadDashboardStats();
     initializeActionTiles();
     
-    // Setzt die Standard-Aktion
+    // Setzt die Standard-Aktion und markiert die Kachel beim Start
     function initializeActionTiles() {
         const defaultTile = document.querySelector(`.action-tile[data-action="${currentSelectedAction}"]`);
         if (defaultTile) {
@@ -42,7 +42,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const adminName = adminNameInput.value.trim();
 
         if (adminName.length < 3) {
-            alert("Bitte gib einen gültigen Admin-Namen ein!");
+            // Keine alert() verwenden, da dies im iFrame Probleme machen kann, aber hier zur Simulation beibehalten
+            alert("Bitte gib einen gültigen Admin-Namen ein!"); 
             return;
         }
 
@@ -88,9 +89,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Theme Switch Logik
     function initializeTheme() {
+        // Lädt das gespeicherte Design oder wählt 'dark' als Standard
         const storedTheme = localStorage.getItem('theme') || 'dark';
         setTheme(storedTheme);
-        // Setzt den Radio-Button basierend auf dem gespeicherten Wert
+        
         const themeRadio = document.querySelector(`input[name="theme"][value="${storedTheme}"]`);
         if (themeRadio) {
             themeRadio.checked = true;
@@ -117,15 +119,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- ENDE DESIGN WECHSEL LOGIK ---
 
 
-    // === 3. NAVIGATION LOGIK (Bleibt gleich) ===
+    // === 3. NAVIGATION LOGIK ===
     navItems.forEach(item => {
         item.addEventListener('click', (e) => {
             e.preventDefault();
             const targetPageId = item.getAttribute('data-page');
             
+            // Navigation aktiv setzen
             navItems.forEach(nav => nav.classList.remove('active'));
             item.classList.add('active');
             
+            // Seiten umschalten
             pages.forEach(page => page.classList.remove('active'));
             const targetPage = document.getElementById(targetPageId);
             if (targetPage) {
@@ -134,23 +138,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
-    // Stellt sicher, dass das Dashboard beim erfolgreichen Login angezeigt wird (siehe Login-Logik)
-    
-    // ... (loadDashboardStats bleibt gleich) ...
+    // ... (loadDashboardStats) ...
     function loadDashboardStats() {
         document.getElementById('stat-online-players').textContent = '42';
         document.getElementById('stat-active-bans').textContent = '5';
         document.getElementById('stat-reports').textContent = '12';
-        document.getElementById('stat-event').textContent = 'Heute 20:00'; // Event-Platzhalter
+        document.getElementById('stat-event').textContent = 'Heute 20:00'; 
     }
 
 
-    // === 4. ADMIN AKTIONEN LOGIK (Bleibt gleich) ===
+    // === 4. ADMIN AKTIONEN LOGIK ===
     actionTiles.forEach(tile => {
         tile.addEventListener('click', () => {
+            // Alle Kacheln deaktivieren
             actionTiles.forEach(t => t.classList.remove('active'));
+            
+            // Die geklickte Kachel aktivieren
             tile.classList.add('active');
             
+            // Die ausgewählte Aktion speichern und im Button anzeigen
             currentSelectedAction = tile.getAttribute('data-action');
             selectedActionSpan.textContent = currentSelectedAction;
         });
@@ -167,7 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const adminName = localStorage.getItem('adminName') || "Unbekannter Admin";
 
-        // HIER würde der API-Call zum Backend gesendet werden
+        // SIMULATION der Aktion
         console.log("--- AKTION AUSFÜHREN ---");
         console.log("Admin:", adminName);
         console.log("Aktion:", currentSelectedAction);
